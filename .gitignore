@@ -1,0 +1,5 @@
+dataset/config.ini
+dataset/*.csv
+
+*.session
+tmp/
