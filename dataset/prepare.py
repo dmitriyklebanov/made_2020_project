@@ -6,6 +6,26 @@ import configparser
 import pandas as pd
 
 
+alphabet = 'абвгдеёжзийклмнопрстуфхцчшщьъыэюя \n'
+
+
+def is_russian_alphabet(message):
+    for c in message:
+        if c not in alphabet:
+            return False
+    return True
+
+
+def filter_dataset(df):
+    df = df[['message', 'media']]
+    df = df[df.media.isnull()].drop(['media'], axis=1)
+    df = df[df.message.notnull()]
+    four_line_message = lambda message: message.count('\n') == 3
+    df = df[df.message.apply(four_line_message)]
+    df = df[df.message.apply(is_russian_alphabet)]
+    return df
+
+
 async def dump_all_messages(client, channel, output_file, limit=None):
     offset_msg = 0
     all_messages = []
@@ -31,7 +51,8 @@ async def dump_all_messages(client, channel, output_file, limit=None):
             break
 
     df = pd.DataFrame(all_messages)
-    df.to_csv(output_file)
+    df = filter_dataset(df)
+    df.to_csv(output_file, index=False)
     return df
 
 
@@ -60,11 +81,11 @@ def main(args):
 
 
 def make_parser(parser):
-    parser.description = 'Collect all messages from certain telegram channel'
+    parser.description = 'Collect all messages from certain telegram channel and prepare dataset'
     parser.add_argument('--config-file', type=str, required=False,
                         default='dataset/config.ini', help='path to config file')
     parser.add_argument('--output-file', type=str, required=False,
-                        default='dataset/raw_messages.csv', help='path to output file')
+                        default='dataset/messages.csv', help='path to output file')
     parser.add_argument('--channel-url', type=str, required=True,
                         help='path to output file')
 
