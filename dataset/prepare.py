@@ -52,8 +52,8 @@ async def dump_all_messages(client, channel, output_file, limit=None):
 
     df = pd.DataFrame(all_messages)
     df = filter_dataset(df)
-    df.to_csv(output_file, index=False)
-    return df
+    with open(output_file, 'w') as f:
+        f.write('\n'.join(list(df.message)))
 
 
 async def process_url(client, url, output_file):
@@ -85,7 +85,7 @@ def make_parser(parser):
     parser.add_argument('--config-file', type=str, required=False,
                         default='dataset/config.ini', help='path to config file')
     parser.add_argument('--output-file', type=str, required=False,
-                        default='dataset/messages.csv', help='path to output file')
+                        default='dataset/messages.txt', help='path to output file')
     parser.add_argument('--channel-url', type=str, required=True,
                         help='path to output file')
 
