@@ -1,10 +1,11 @@
 from telethon.sync import TelegramClient
 from telethon.tl.functions.messages import GetHistoryRequest
 
+from sklearn.model_selection import train_test_split
+
 import argparse
 import configparser
 import pandas as pd
-
 
 alphabet = 'абвгдеёжзийклмнопрстуфхцчшщьъыэюя \n'
 
@@ -24,6 +25,11 @@ def filter_dataset(df):
     df = df[df.message.apply(four_line_message)]
     df = df[df.message.apply(is_russian_alphabet)]
     return df
+
+
+def save_dataset(df, filename):
+    with open(filename, 'w') as f:
+        f.write('\n\n'.join(list(df.message)))
 
 
 async def dump_all_messages(client, channel, output_file, limit=None):
@@ -52,8 +58,9 @@ async def dump_all_messages(client, channel, output_file, limit=None):
 
     df = pd.DataFrame(all_messages)
     df = filter_dataset(df)
-    with open(output_file, 'w') as f:
-        f.write('\n'.join(list(df.message)))
+    train, test = train_test_split(df, test_size=0.1)
+    save_dataset(train, output_file + "_train.txt")
+    save_dataset(test, output_file + "_test.txt")
 
 
 async def process_url(client, url, output_file):
@@ -85,7 +92,7 @@ def make_parser(parser):
     parser.add_argument('--config-file', type=str, required=False,
                         default='dataset/config.ini', help='path to config file')
     parser.add_argument('--output-file', type=str, required=False,
-                        default='dataset/messages.txt', help='path to output file')
+                        default='dataset/messages', help='path to output file')
     parser.add_argument('--channel-url', type=str, required=True,
                         help='path to output file')
 
