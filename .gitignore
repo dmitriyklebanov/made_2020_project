@@ -1,4 +1,6 @@
 dataset/config.ini
 
 *.session
+*.env
 tmp/
+model/
