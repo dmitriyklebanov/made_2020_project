@@ -1,6 +1,8 @@
 version: "3.8"
 services:
   bot:
+    build:
+      context: .
     image: "made_project:latest"
     env_file:
       - bot-variables.env
