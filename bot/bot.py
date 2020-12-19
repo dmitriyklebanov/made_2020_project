@@ -48,7 +48,7 @@ dp = Dispatcher(bot)
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
-    HELLO_MESSAGE = "Привет!\nЯ умею генерировать нейро пирожки. Хочешь один?"
+    HELLO_MESSAGE = "Привет!\nЯ умею генерировать нейро пирожки. Хочешь один?\nОтправь мне начало пирожка и я сгенерирую тебе его продолжение"
     await message.reply(HELLO_MESSAGE)
 
 
