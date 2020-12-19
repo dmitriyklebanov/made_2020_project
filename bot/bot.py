@@ -1,6 +1,8 @@
 from evaluator.evaluate_model import create_evaluator, predict
 
-from aiogram import Bot
+from aiogram import Bot, types
+from aiogram.dispatcher import Dispatcher
+from aiogram.utils import executor
 
 from datetime import timedelta
 
@@ -10,7 +12,7 @@ import random
 
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
-CHANNEL_ID = os.environ["CHANNEL_ID"]
+CHANNEL_ID = None
 bot = Bot(BOT_TOKEN)
 
 
@@ -19,30 +21,13 @@ async def post_message(message):
 
 
 evaluator = None
-default_prompt = "олег"
+DEFAULT_PROMPT = "олег"
 
 
 async def post():
-    '''
-    message = "Hello, World! Now="
-
-    from datetime import datetime
-
-    now = datetime.now()
-
-    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-    message = message + dt_string
-    # print(message)
-    '''
-    global evaluator
-    global prompt
-
-    if evaluator is None:
-        evaluator = create_evaluator()
-
     generate = True
     while generate:
-        message = predict(evaluator, default_prompt)
+        message = predict(evaluator, DEFAULT_PROMPT)
         prompt = message.split('\n')[-1]
         message = predict(evaluator, prompt)
         message = message[:message.rfind('\n')]
@@ -58,6 +43,31 @@ async def run_periodically(wait_time_bounds, func, *args, **kwargs):
         await asyncio.sleep(wait_time)
 
 
+dp = Dispatcher(bot)
+
+
+@dp.message_handler(commands=['start', 'help'])
+async def send_welcome(message: types.Message):
+    HELLO_MESSAGE = "Привет!\nЯ умею генерировать нейро пирожки. Хочешь один?"
+    await message.reply(HELLO_MESSAGE)
+
+
+@dp.message_handler()
+async def echo(message: types.Message):
+    generate = True
+    while generate:
+        reply_message = predict(evaluator, message.text)
+        generate = not reply_message.startswith(message.text)
+    await message.reply(reply_message)
+
+
 if __name__ == "__main__":
-    wait_time_bounds = (int(os.environ["MIN_TIME"]), int(os.environ["MAX_TIME"]))
-    asyncio.get_event_loop().run_until_complete(run_periodically(wait_time_bounds, post))
+    evaluator = create_evaluator()
+
+    loop = asyncio.get_event_loop()
+    if os.environ["POST_TO_CHANNEL"] == "True":
+        CHANNEL_ID = os.environ["CHANNEL_ID"]
+        wait_time_bounds = (int(os.environ["MIN_TIME"]), int(os.environ["MAX_TIME"]))
+        loop.create_task(run_periodically(wait_time_bounds, post))
+
+    executor.start_polling(dp, skip_updates=True, loop=loop)
